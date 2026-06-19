@@ -8,8 +8,8 @@ from pathlib import Path
 
 # Project root is the parent of the app directory
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-CONFIG_PATH = PROJECT_ROOT / "config.json"
-CSV_PATH = PROJECT_ROOT / "songs.csv"
+CONFIG_PATH = PROJECT_ROOT / "config" / "config.json"
+CSV_PATH = PROJECT_ROOT / "data" / "songs.csv"
 
 
 def load_config():
