@@ -1,0 +1,19 @@
+{
+  "ui_theme": {
+    "bg_color": "#1e1e2f",
+    "accent_color": "#a78bfa",
+    "font": "Helvetica",
+    "font_size": 12,
+    "dark_mode": true
+  },
+  "emotion_mood_map": {
+    "happy": "energetic",
+    "sad": "calm",
+    "angry": "motivational",
+    "neutral": "soft",
+    "surprise": "upbeat",
+    "fear": "motivational",
+    "disgust": "motivational"
+  },
+  "supported_emotions": ["happy", "sad", "angry", "neutral", "surprise"]
+}
