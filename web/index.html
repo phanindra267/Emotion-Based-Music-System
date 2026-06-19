@@ -10,14 +10,29 @@
 <body>
     <div class="container glass">
         <h1>Emotion‑Music Recommender</h1>
-        <select id="emotionSelect">
-            <option value="energetic">Energetic</option>
-            <option value="calm">Calm</option>
-            <option value="motivational">Motivational</option>
-            <option value="soft">Soft</option>
-            <option value="upbeat">Upbeat</option>
-        </select>
-        <button id="recommendBtn">Recommend</button>
+        <p class="subtitle">Upload a photo or type a sentence to get music recommendations based on your emotion!</p>
+        
+        <div class="input-section">
+            <div class="tab-buttons">
+                <button id="btnTextTab" class="active">📝 Text</button>
+                <button id="btnImageTab">📸 Image</button>
+            </div>
+            
+            <div id="textInputArea" class="tab-content active-tab">
+                <input type="text" id="textInput" placeholder="How are you feeling right now?" />
+                <button id="analyzeTextBtn">Analyze Text</button>
+            </div>
+            
+            <div id="imageInputArea" class="tab-content" style="display: none;">
+                <input type="file" id="imageInput" accept="image/*" />
+                <button id="analyzeImageBtn">Analyze Image</button>
+            </div>
+        </div>
+
+        <div id="loadingIndicator" style="display: none;">
+            <p>Processing... ⏳</p>
+        </div>
+
         <div id="results" class="results"></div>
     </div>
     <script src="script.js"></script>

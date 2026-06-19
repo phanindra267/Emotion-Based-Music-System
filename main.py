@@ -36,15 +36,24 @@ def run_headless(image_path: str):
         for i, song in enumerate(result["songs"], 1):
             print(f"  {i}. {song['song_name']} – {song['artist']} ({song['genre']})")
 
+def run_server():
+    """Run the FastAPI backend server."""
+    import uvicorn
+    print("Starting Emotion Music API server on http://localhost:8000")
+    uvicorn.run("app.api:app", host="0.0.0.0", port=8000, reload=True)
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Emotion‑Based Music Recommendation System")
     parser.add_argument("--headless", action="store_true", help="Run without GUI (process a single image)")
     parser.add_argument("--image", type=str, help="Path to an image file (required with --headless)")
+    parser.add_argument("--serve", action="store_true", help="Start the FastAPI backend server for the web UI")
     return parser.parse_args()
 
 if __name__ == "__main__":
     args = parse_args()
-    if args.headless:
+    if args.serve:
+        run_server()
+    elif args.headless:
         if not args.image:
             print("[ERROR] --image is required when using --headless")
             sys.exit(1)

@@ -172,6 +172,11 @@ class EmotionMusicApp(tk.Tk):
             style="Primary.TButton",
         )
         self.detect_btn.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+        
+        self.manage_btn = ttk.Button(
+            webcam_btn_frame, text="⚙️ Manage Songs", command=self.open_song_manager
+        )
+        self.manage_btn.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
 
         # Status label
         self.status_label = ttk.Label(
@@ -393,3 +398,80 @@ class EmotionMusicApp(tk.Tk):
         if self.is_webcam_active:
             self.stop_webcam()
         self.destroy()
+
+    def open_song_manager(self):
+        """Open a new window to manage songs."""
+        manager_window = tk.Toplevel(self)
+        manager_window.title("⚙️ Manage Songs")
+        manager_window.geometry("600x400")
+        manager_window.configure(bg=self.BG_COLOR)
+        
+        from .song_manager import list_songs, add_song, delete_song
+        
+        # Frame for list
+        list_frame = ttk.Frame(manager_window)
+        list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        columns = ("name", "artist", "genre", "mood")
+        tree = ttk.Treeview(list_frame, columns=columns, show="headings")
+        tree.heading("name", text="Song Name")
+        tree.heading("artist", text="Artist")
+        tree.heading("genre", text="Genre")
+        tree.heading("mood", text="Mood")
+        tree.pack(fill=tk.BOTH, expand=True)
+        
+        def refresh_list():
+            for item in tree.get_children():
+                tree.delete(item)
+            for song in list_songs():
+                tree.insert("", tk.END, values=(song["song_name"], song["artist"], song["genre"], song["mood"]), iid=song["_index"])
+                
+        refresh_list()
+        
+        # Frame for controls
+        control_frame = ttk.Frame(manager_window)
+        control_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+        def del_song():
+            selected = tree.selection()
+            if not selected:
+                messagebox.showwarning("Warning", "Select a song to delete.")
+                return
+            idx = int(selected[0])
+            delete_song(idx)
+            refresh_list()
+            
+        ttk.Button(control_frame, text="Delete Selected", command=del_song).pack(side=tk.LEFT, padx=5)
+        
+        # Simple Add inputs
+        add_frame = ttk.Frame(manager_window)
+        add_frame.pack(fill=tk.X, padx=10, pady=10)
+        
+        tk.Label(add_frame, text="Name:", bg=self.BG_COLOR, fg=self.FG_COLOR).grid(row=0, column=0, padx=2)
+        entry_name = ttk.Entry(add_frame, width=15)
+        entry_name.grid(row=0, column=1, padx=2)
+        
+        tk.Label(add_frame, text="Artist:", bg=self.BG_COLOR, fg=self.FG_COLOR).grid(row=0, column=2, padx=2)
+        entry_artist = ttk.Entry(add_frame, width=15)
+        entry_artist.grid(row=0, column=3, padx=2)
+        
+        tk.Label(add_frame, text="Genre:", bg=self.BG_COLOR, fg=self.FG_COLOR).grid(row=0, column=4, padx=2)
+        entry_genre = ttk.Entry(add_frame, width=10)
+        entry_genre.grid(row=0, column=5, padx=2)
+        
+        tk.Label(add_frame, text="Mood:", bg=self.BG_COLOR, fg=self.FG_COLOR).grid(row=1, column=0, padx=2, pady=5)
+        entry_mood = ttk.Entry(add_frame, width=15)
+        entry_mood.grid(row=1, column=1, padx=2, pady=5)
+        
+        def do_add():
+            if not entry_name.get() or not entry_mood.get():
+                messagebox.showerror("Error", "Name and Mood are required.")
+                return
+            add_song(entry_name.get(), entry_artist.get(), entry_genre.get(), entry_mood.get())
+            refresh_list()
+            entry_name.delete(0, tk.END)
+            entry_artist.delete(0, tk.END)
+            entry_genre.delete(0, tk.END)
+            entry_mood.delete(0, tk.END)
+            
+        ttk.Button(add_frame, text="Add Song", command=do_add).grid(row=1, column=2, columnspan=2, padx=5, pady=5)

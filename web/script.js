@@ -1,85 +1,124 @@
-// script.js – handles emotion selection, CSV loading, and song recommendation
+// script.js – handles emotion detection via API
 
-// Mapping from emotion (lowercase) to mood (same as Python version)
-const EMOTION_MOOD_MAP = {
-  happy: "energetic",
-  sad: "calm",
-  angry: "motivational",
-  neutral: "soft",
-  surprise: "upbeat",
-  fear: "motivational",
-  disgust: "motivational"
-};
+const API_BASE_URL = "http://localhost:8000/api";
 
-// Utility: parse CSV string into array of objects
-function parseCSV(csvText) {
-  const lines = csvText.trim().split(/\r?\n/);
-  const header = lines[0].split(',').map(h => h.trim());
-  const rows = lines.slice(1).map(line => {
-    const values = line.split(',').map(v => v.trim());
-    const obj = {};
-    header.forEach((key, i) => (obj[key] = values[i]));
-    return obj;
+document.addEventListener("DOMContentLoaded", () => {
+  const btnTextTab = document.getElementById("btnTextTab");
+  const btnImageTab = document.getElementById("btnImageTab");
+  const textInputArea = document.getElementById("textInputArea");
+  const imageInputArea = document.getElementById("imageInputArea");
+
+  const analyzeTextBtn = document.getElementById("analyzeTextBtn");
+  const textInput = document.getElementById("textInput");
+
+  const analyzeImageBtn = document.getElementById("analyzeImageBtn");
+  const imageInput = document.getElementById("imageInput");
+
+  const loadingIndicator = document.getElementById("loadingIndicator");
+
+  // Tab Switching
+  btnTextTab.addEventListener("click", () => {
+    btnTextTab.classList.add("active");
+    btnImageTab.classList.remove("active");
+    textInputArea.style.display = "block";
+    imageInputArea.style.display = "none";
   });
-  return rows;
-}
 
-// Load the songs dataset (relative to the web folder)
-async function loadSongs() {
-  const response = await fetch("songs.csv");
-  if (!response.ok) {
-    throw new Error("Failed to load songs.csv");
-  }
-  const text = await response.text();
-  return parseCSV(text);
-}
+  btnImageTab.addEventListener("click", () => {
+    btnImageTab.classList.add("active");
+    btnTextTab.classList.remove("active");
+    imageInputArea.style.display = "block";
+    textInputArea.style.display = "none";
+  });
 
-// Recommend up to n songs for a given mood
-function recommendSongs(songs, mood, n = 5) {
-  const filtered = songs.filter(s => s.mood && s.mood.trim().toLowerCase() === mood);
-  if (filtered.length === 0) return [];
-  // Shuffle and take n
-  const shuffled = filtered.sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, n);
-}
+  // Analyze Text
+  analyzeTextBtn.addEventListener("click", async () => {
+    const text = textInput.value.trim();
+    if (!text) {
+      alert("Please enter some text!");
+      return;
+    }
+    
+    showLoading();
+    try {
+      const response = await fetch(`${API_BASE_URL}/analyze/text`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+      const data = await handleResponse(response);
+      renderResults(data);
+    } catch (e) {
+      showError(e.message);
+    }
+  });
 
-// UI handling
-document.addEventListener("DOMContentLoaded", async () => {
-  const emotionSelect = document.getElementById("emotionSelect");
-  const recommendBtn = document.getElementById("recommendBtn");
-  const resultsDiv = document.getElementById("results");
+  // Analyze Image
+  analyzeImageBtn.addEventListener("click", async () => {
+    const file = imageInput.files[0];
+    if (!file) {
+      alert("Please select an image file first!");
+      return;
+    }
 
-  let songsData = [];
-  try {
-    songsData = await loadSongs();
-  } catch (e) {
-    resultsDiv.innerHTML = `<p style="color:#ff8c42;">⚠️ ${e.message}</p>`;
-    console.error(e);
-    return;
-  }
+    const formData = new FormData();
+    formData.append("file", file);
 
-  recommendBtn.addEventListener("click", () => {
-    const emotion = emotionSelect.value.toLowerCase();
-    const mood = EMOTION_MOOD_MAP[emotion] || "soft"; // fallback
-    const recommendations = recommendSongs(songsData, mood);
-    renderResults(recommendations, emotion, mood);
+    showLoading();
+    try {
+      const response = await fetch(`${API_BASE_URL}/analyze/image`, {
+        method: "POST",
+        body: formData
+      });
+      const data = await handleResponse(response);
+      renderResults(data);
+    } catch (e) {
+      showError(e.message);
+    }
   });
 });
 
-function renderResults(recs, emotion, mood) {
+function showLoading() {
+  document.getElementById("loadingIndicator").style.display = "block";
+  document.getElementById("results").innerHTML = "";
+}
+
+function hideLoading() {
+  document.getElementById("loadingIndicator").style.display = "none";
+}
+
+async function handleResponse(response) {
+  hideLoading();
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData.detail || `Server error: ${response.status}`);
+  }
+  return await response.json();
+}
+
+function showError(msg) {
+  hideLoading();
+  document.getElementById("results").innerHTML = `<p style="color:#ff8c42;">⚠️ ${msg}</p>`;
+}
+
+function renderResults(data) {
   const resultsDiv = document.getElementById("results");
-  if (recs.length === 0) {
-    resultsDiv.innerHTML = `<p>No songs found for mood "${mood}".</p>`;
+  const { emotion, mood, songs } = data;
+
+  if (!songs || songs.length === 0) {
+    resultsDiv.innerHTML = `<p>Detected Emotion: <strong>${emotion}</strong> → Mood: <strong>${mood}</strong></p><p>No songs found for this mood.</p>`;
     return;
   }
-  const cards = recs
+
+  const cards = songs
     .map(
-      song => `<div class="result-card" data-mood="${song.mood}">
+      song => `<div class="result-card">
           <h3>${song.song_name}</h3>
           <p><strong>Artist:</strong> ${song.artist}</p>
           <p><strong>Genre:</strong> ${song.genre}</p>
         </div>`
     )
     .join("");
+    
   resultsDiv.innerHTML = `<p>Detected Emotion: <strong>${emotion}</strong> → Mood: <strong>${mood}</strong></p>` + cards;
 }

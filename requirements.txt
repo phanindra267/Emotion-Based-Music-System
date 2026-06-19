@@ -1,0 +1,10 @@
+opencv-python
+deepface
+pandas
+numpy
+pillow
+textblob
+nltk
+fastapi
+uvicorn
+python-multipart
